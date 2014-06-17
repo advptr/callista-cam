@@ -1,0 +1,20 @@
+{
+  "name": "CallistaCam",
+  "version": "0.0.1",
+  "description": "A javascript camera share app.",
+  "author": "Peter Larsson <peter.larsson@callistaenterprise.se>",
+  "contributors": [{
+ 
+}],
+ "scripts": {
+    "start": "node server.js"
+  },
+"dependencies": {
+    "socket.io": "~1.0",
+    "connect": "~2.19",
+    "optimist": "~0.6",
+    "basic-auth-connect": "~1.0",
+    "compression": "~1.0"
+  },
+  "readme": "Pure javascript camera/video share application"
+}

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>CallistaCam</title>
+  <link href="css/bootstrap.min.css" rel="stylesheet">
+  <style>
+  .videostream {
+    width: 100%;
+    background: rgba(255,255,255,0.5);
+  }
+
+  .hidden { display: none; }
+
+  .border { border: 1px solid #ccc; }
+  
+  #playback:-webkit-full-screen  { width: 85% }
+  #playback:-moz-full-screen   { width: 85% }
+  #playback:-ms-full-screen    { width: 85% }
+  #playback:-o-full-screen   { width: 85% }
+  #playback:full-screen      { width: 85% }
+
+  </style>
+
+</head>
+
+<body>
+
+  <noscript>
+    <div class="container">
+      <center><h3>You must enable javascript to use CallistaCam</h3></center>
+    </div>
+  </noscript>
+
+  <div class="container">
+    <div class="panel panel-primary">
+      <div class="panel-heading">
+        <h3>CallistaCam</h3>
+      </div>
+      <div class="row">
+        <div class="col-lg-9">
+          <div class="btn-group">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+              <span id="camera-caption"></span>
+              <span class="caret"></span>
+            </button>
+            <ul id="channels" class="dropdown-menu">
+            </ul>
+          </div>
+        </div>
+        <div class="col-md-3">
+          Share Camera
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-9">
+          <div id="playback">
+            <div id="playback-controls" class="btn-group hidden" style="position: absolute; top: 0px; right: 16px; z-index: 1;">
+             <button id="full-screen" class="btn btn-default">
+               <span id="fullscreen-icon" class="glyphicon glyphicon-resize-full"></span>
+             </button>
+             <button id="unsubscribe-button" class="btn btn-default">
+              <span class="glyphicon glyphicon-stop"></span>
+            </button>
+          </div>
+          <img id="playback-canvas" style="width: 100%;"></img>      
+        </div>
+      </div>
+      <div class="col-md-3" align="center">
+        <div>
+         <video id="camera-stream" class="videostream border" autoplay></video>
+         <div class="input-group input-group-sm">
+          <span class="input-group-addon">Name</span>
+          <input id="channel-name" type="text" class="form-control" placeholder="Your channel name">
+          <span class="input-group-btn">
+            <button id="transmit-button" class="btn btn-default" type="button">
+              <span class="glyphicon glyphicon-play"></span>
+            </button>
+          </span>
+        </div><!-- /input-group -->
+      </div> <!-- /div -->
+    </div><!-- /col-->
+  </div>
+</div>
+</div>
+
+<script src="js/socket.io.js"></script>
+<script src="js/wsocket.js"></script>
+<script src="js/jquery.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/jquery.fullscreen-min.js"></script>
+
+<script>
+
+function errorCallback(e) {
+  console.log(e);
+  alert('Control of user-media (camera-stream) not supported in your browser: ' + e.target);
+}
+
+(function() {
+
+  var frameRate = 15;
+  var frameQuality = 0.8;
+
+  var href = $(location).attr('href');
+  var ws = WSocket(href.substring(0, href.lastIndexOf('/')));
+
+  //
+  navigator.getUserMedia = (navigator.getUserMedia ||
+    navigator.webkitGetUserMedia ||
+    navigator.mozGetUserMedia || 
+    navigator.msGetUserMedia);
+
+      // 1440 x 435
+      var video = document.querySelector('#camera-stream');
+
+      var localMediaStream = null;
+      var transmitter = null;
+      var back = document.createElement('canvas');
+      var backcontext = back.getContext('2d');
+
+      video.addEventListener('canplay', function(e) {
+        back.width = 320;
+        back.height = 240;
+        // Reverse the canvas image
+        /*
+        backcontext.translate(back.width, 0);
+        backcontext.scale(-1, 1);
+        */
+      }, false);
+      
+      // retrieve channel name
+      if (localStorage.getItem('channel-name')) {
+        $('#channel-name').val(localStorage.getItem('channel-name'));
+      }
+
+      //
+      var setCameraViewCaption = function(name) {
+        $('#camera-caption').text(name || 'View Camera');
+      }
+
+      setCameraViewCaption();
+
+      //
+      var startTransmittion = function(e) {
+       if (navigator.getUserMedia) {
+        console.log('getUserMedia');
+        navigator.getUserMedia({video: true}, function(stream) {
+          console.log(stream);
+          video.src = window.URL.createObjectURL(stream);
+          video.controls = false;
+          localMediaStream = stream;
+          var channel = $('#channel-name').val();
+          if (channel.length == 0) {
+            channel = 'auto:' + Math.random().toString().substr(2, 9);
+            $('#channel-name').val(channel);
+          }
+          localStorage.setItem('channel-name', channel);
+          transmitter = setInterval(function() {
+            backcontext.drawImage(video, 0, 0, back.width, back.height);
+            ws.send('frame', {
+              channel : channel,
+              image : back.toDataURL("image/jpeg", frameQuality)
+            });
+          }, Math.round(1000 / frameRate));
+
+          $('#transmit-button').unbind('click').click(stopTransmittion);
+          $('#transmit-button').html('<span class="glyphicon glyphicon-stop"></span>');
+        }, errorCallback);
+      } else {
+        errorCallback({target: video});
+      }
+    }
+
+    /* for test
+    var makeGrey = function() {
+      var imageData = backcontext.getImageData(0, 0, back.width, back.height);
+      var data = imageData.data;
+      for (var i = 0; i < data.length; i += 4) {
+        var bright = 0.34 * data[i] + 0.5 * data[i + 1] + 0.16 * data[i + 2];
+        data[i] = bright;
+        data[i + 1] = bright;
+        data[i + 2] = bright;
+      }
+      backcontext.putImageData(imageData, 0, 0);
+    }*/
+
+    //
+    var stopTransmittion = function(e) {
+      ws.send('unpublish');
+      clearInterval(transmitter);
+      video.pause();
+      localMediaStream && localMediaStream.stop();
+      $('#transmit-button').unbind('click').click(startTransmittion);
+      $('#transmit-button').html('<span class="glyphicon glyphicon-play"></span>');
+    }
+
+    //
+    var createChannelItem = function(name) {
+        var li = $('<li>');
+        var href = $('<a>').attr('href', '#').text(name);
+        href.click(function(e) {
+          console.log('select channel: ' + name);
+          ws.send('subscribe', name);
+          $('#playback-controls').removeClass('hidden');
+          setCameraViewCaption(name);
+        });
+        li.append(href);
+        return li;
+    }
+
+    //
+    var updateChannels = function(names) {
+      $('#channels').empty();
+      for (var i = 0; i < names.length; i++) {
+        $('#channels').append(createChannelItem(names[i]));
+      } 
+    }
+
+    //
+    ws.listen('channels', function(names) {
+      updateChannels(names);
+      if (names.length == 0) {
+        setCameraViewCaption();
+      }
+    });
+
+    //
+    $('#unsubscribe-button').click(function() {
+      ws.send('unsubscribe');
+      $('#playback-controls').addClass('hidden');
+      setCameraViewCaption();
+    });
+
+    //
+    $('#transmit-button').click(startTransmittion);
+      // display video
+      var canvas = document.querySelector('#playback-canvas');
+      ws.listen('frame', function(data) {
+        canvas.src = data.image;
+      });
+
+
+    //
+    $(document).bind("fullscreenchange", function() {
+      if ($(document).fullScreen()) {
+        $('#fullscreen-icon').removeClass('glyphicon-resize-full').addClass('glyphicon-resize-small')          
+      } else {
+        $('#fullscreen-icon').removeClass('glyphicon-resize-small').addClass('glyphicon-resize-full')          
+      }
+    });
+
+    //
+    $('#full-screen').click(function() {
+       $('#playback').toggleFullScreen();
+    });
+
+  })();
+
+
+  </script>
+
+</body>
+</html>
