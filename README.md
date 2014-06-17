@@ -22,7 +22,7 @@ $ node server.js [ --port <port> ] --secret <password>
   
 #### Connect using a Google Chrome Browser
 
-Open to [http://localhost:8080](http://localhost:8080)
+Open [http://localhost:8080](http://localhost:8080)
 
 
 
