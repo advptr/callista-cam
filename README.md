@@ -3,6 +3,14 @@ callista-cam
 
 Pure HTML5, JavaScript camera stream share application (Google Chrome only)
 
+#### Install
+
+First [node.js](http://nodejs.org/) is required.
+
+```
+$ npm install
+```
+
 
 #### Start Server
 
