@@ -17,12 +17,17 @@ $ npm install
 ````
 $ node server.js [ --port <port> ] --secret <password>
     port: HTTP listening port, default is 8080
-    secret: the secret to enter to access the Web Application. For simplicity basic auth is used and the secret might be given  as username or password.
+    secret: the secret to enter to access the Web Application. For simplicity basic auth is used and the secret
+    might be given as username or password.
 ```
   
 #### Connect using a Google Chrome Browser
 
 Open [http://localhost:8080](http://localhost:8080)
+
+Enter the given secret as username or password when prompted for basic authentication. 
+
+Enjoy!
 
 
 
