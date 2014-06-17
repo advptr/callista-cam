@@ -115,6 +115,10 @@ function errorCallback(e) {
     navigator.mozGetUserMedia || 
     navigator.msGetUserMedia);
 
+      if (navigator.userAgent.indexOf("Chrome") == -1) {
+          $('.col-md-3').addClass('hidden');
+      }
+
       // 1440 x 435
       var video = document.querySelector('#camera-stream');
 
@@ -201,16 +205,16 @@ function errorCallback(e) {
 
     //
     var createChannelItem = function(name) {
-        var li = $('<li>');
-        var href = $('<a>').attr('href', '#').text(name);
-        href.click(function(e) {
-          console.log('select channel: ' + name);
-          ws.send('subscribe', name);
-          $('#playback-controls').removeClass('hidden');
-          setCameraViewCaption(name);
-        });
-        li.append(href);
-        return li;
+      var li = $('<li>');
+      var href = $('<a>').attr('href', '#').text(name);
+      href.click(function(e) {
+        console.log('select channel: ' + name);
+        ws.send('subscribe', name);
+        $('#playback-controls').removeClass('hidden');
+        setCameraViewCaption(name);
+      });
+      li.append(href);
+      return li;
     }
 
     //
@@ -256,8 +260,8 @@ function errorCallback(e) {
 
     //
     $('#full-screen').click(function() {
-       $('#playback').toggleFullScreen();
-    });
+     $('#playback').toggleFullScreen();
+   });
 
   })();
 
